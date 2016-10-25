@@ -1,0 +1,13 @@
+#compdef quoter
+_arguments -s -S -A '-*' : \
+'(* -)'{'--help','-h'}'[print help]' \
+'(* -)'{'--version','-V'}'[print version]' \
+{'(--cut)-c','(-c)--cut'}'[omit trailing newline in output]' \
+{'(--stdin)-i','(-i)--stdin'}'[append stdin, split at \\0]' \
+{'(--newline)-n','(-n)--newline'}'[output newline instead of space]' \
+'(--long -l --unshort -S '{'--short)-s','-s)--short'}'[short output]' \
+'(--long -l --short -s '{'--unshort)-S','-S)--unshort'}'[normal output (default)]' \
+'(--short -s --unshort -S '{'--long)-l','-l)--long'}'[long output]' \
+{'(--output)-o+','(-o)--output='}'[output to specified file]:file:_files' \
+{'(--append)-a+','(-a)--append='}'[append output to specified file]:file:_files' \
+'*::command: _normal'
