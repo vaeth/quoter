@@ -2,31 +2,32 @@ PREFIX=/usr
 BIN_DIR=$(PREFIX)/bin
 ZSH_FPATH=$(PREFIX)/share/zsh/site-functions
 
-.PHONY: all
-all: quoter
+.PHONY: FORCE all install uninstall clean distclean maintainer-clean
 
-quoter: src/quoter.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o quoter src/quoter.c || \
+all: bin/quoter
+
+bin/quoter: src/quoter.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o bin/quoter src/quoter.c || \
 	$(CC) -DAVOID_BUILTIN_EXPECT -DAVOID_ATTRIBUTE_NORETURN \
-		$(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o quoter src/quoter.c
+		$(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o bin/quoter src/quoter.c
 
-.PHONY: install
-install: quoter
-	install -D quoter $(DESTDIR)$(BIN_DIR)/quoter
+install: bin/quoter
+	install -D bin/quoter $(DESTDIR)$(BIN_DIR)/quoter
+	install -Dm 644 bin/quoter_pipe.sh $(DESTDIR)$(BIN_DIR)/quoter_pipe.sh
 	install -Dm 644 zsh/_quoter $(DESTDIR)/$(ZSH_FPATH)/_quoter
 
-.PHONY: uninstall
-uninstall:
+uninstall: FORCE
 	rm -f $(DESTDIR)/$(BIN_DIR)/quoter
+	rm -f $(DESTDIR)/$(BIN_DIR)/quoter_pipe.sh
 	rm -f $(DESTDIR)/$(ZSH_FPATH)/_quoter
 
-.PHONY: clean
-clean:
-	rm -f ./quoter
+clean: FORCE
+	rm -f bin/quoter src/quoter ./quoter \
+		bin/*.o src/*.o *.o bin/*.obj src/*.obj ./*.obj
 
-.PHONY: distclean
-distclean: clean
-	rm -f ./quoter-*.asci ./quoter-*.tar.* ./quoter-*.zip
+distclean: clean FORCE
+	rm -f ./quoter-*.asc ./quoter-*.tar.* ./quoter-*.tar ./quoter-*.zip
 
-.PHONY: maintainer-clean
-maintainer-clean: distclean
+maintainer-clean: distclean FORCE
+
+FORCE:

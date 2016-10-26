@@ -2,3 +2,5 @@ quoter
 quoter-*.asc
 quoter-*.tar.*
 quoter-*.zip
+*.o
+*.obj

@@ -5,13 +5,20 @@ Author: Martin Väth <martin@mvath.de>
 
 This project is under the MIT license.
 
-This script serves two purposes:
+This project serves two purposes:
 
-(a) Quote arguments for eval or remote usage in POSIX shells
-(b) Allow to deal in POSIX shell with output from tools which output
-strings separated by \0 (like GNU find -print0), similar to the GNU xargs -0
+1. Quote arguments for eval or remote usage in POSIX shells:
+"quote --" is similar to "printf '%q '" supported by some shells or
+external printf implementations. Note, however, that %q is not POSIX,
+and so one cannot rely that this works on all systems.
 
-This is best explained by some example POSIX shell script snippets.
+2. Allow to deal in POSIX shell with standard input from tools which output
+strings separated by \0 (like GNU find -print0):
+"quote --stdin" is somewhat similar to "xargs -0 printf '%q '" except that
+neither the option -0 nor the %q are POSIX, and so one cannot rely that this
+works on all systems.
+
+The above points are best explained by some POSIX shell script snippets:
 
 1.
 	su -c "$(quoter -- cat -- "$@")"
@@ -19,58 +26,114 @@ This is best explained by some example POSIX shell script snippets.
 The effect of the above snippet is similar to
 	su -c "cat -- $@"
 except that the latter cannot be used if the arguments might contain
-a special character. In fact, if $1 has e.g. the value "; rm -rf *"
-then that bad code would be executed, because the whole argument is
-interpreted by the remote shell.
+a special character. In fact, if $1 has e.g. the value "/dev/null; rm -rf *"
+then the bad code "cat -- /dev/null; rm -rf *" would be executed, because
+the whole argument is interpreted by the remote shell.
+Note that the "--" after quoter in this example is mandatory to make sure
+that quoter will not interpret any furter options
 
 2.
-	eval "set -- a `find . -print0 | quoter --stdin`"
+	eval "set -- `find . -type f -print0 | quoter --stdin`"
+	for file
+	do ...
+	done
+
+This will (recursively) iterate through all ordinary files from the current
+directory or some of its subdirectories. In contrast to the "naive" approach
+	for file in `find . -type f`
+	do ...
+	done
+the above has no problem with special characters (like spaces) in filenames.
+Of course, find has to understand the non-POSIX option -print0 fo this.
+
+The example 2. above still has two problems:
+
+(a) If "find" returns nothing, then the above "eval" will expand to "set --";
+some (buggy) shells will not remove all arguments by this command.
+Workaround: Add artificially an argument and remove it, that is, use instead
+of the above "eval" for instance
+	eval "set -- a `find . -type f -print0 | quoter --stdin`"
+	shift
+
+(b) It is hard to check whether the call to "find" within the above "eval"
+was succesfull, because POSIX returns only the exit status of the last
+command of a pipe, and neither -o pipefail nor the PIPESTATUS array are POSIX.
+For this reason, this project also provides a script "quote_pipe.sh".
+When this script is sourced, it provides a shell function "quote_pipe()".
+The call
+	quote_pipe [-l|--long] [--] command [args]
+is then similar to
+	quote_pipe=`command [args] | quoter --stdin [-l|--long]`
+except that the exit status is 0 only if both commands of the pipe succeeded.
+In addition, the variables quote_pipestatus and quote_pipestatus1 contain the
+exit status of the first and second command of the above pipe, respectively.
+
+Summarizing, a variant of the above example which solves the problems (a),(b)
+can look like this:
+
+	# first source quote_pipe.sh from $PATH if necessary:
+	command -v quote_pipe >/dev/null 2>&1 || . quote_pipe.sh
+	quote_pipe find . -type f -print0 || {
+		[ "$pipestatus" -eq 0 ] || echo "find failed" >&2
+		[ "$pipestatus1" -eq 0 ] || echo "quote failed" >&2
+		exit 1
+	}
+	eval "set -- a $quote_pipe"
 	shift
 	for file
 	do ...
 	done
 
-This will (recursively) iterate through all files from the current directory.
-In contrast to the "naive" approach
-	for file in `find .`
-	do ...
-	done
-the above has no problem with special characters (like spaces) in filenames.
-Of course, find has to understand the non-POSIX option -print0 fo this.
-(The trick to set one "dummy" argument "a" and then to shift it away is
-needed only for some buggy shells for the case that "find" would not output
-any files.)
+It is _not_ possible to specify redirection or several commands
+(e.g. separated by ; or && or something similar) in the argument of quote_pipe.
+If you need to use such a thing, define a function:
 
-Type "quoter --help" to see the detailed options which quoter does support.
+	my_pipe_task() {
+		some_command && another_command >/dev/null 2>&1
+	}
+	quote_pipe my_pipe_task
 
-The options -s (--short) and -l (--long) need a more verbose explanation:
+
+Type "quoter --help" to see further options of "quoter".
+
+The options -s (--short) and -l (--long) of "quoter" need a more verbose
+explanation:
+
 Roughly speaking, quoter is intended to be used such that
 	eval "set -- `quoter ...`"
 can always be safely executed, i.e. all possibly "disturbing" characters
 are quoted or escaped. Certain non-POSIX extensions of some shells might
 require quoting further characters.
-For instance, {a,b} is by some shells interpreted as "a" "b".
+For instance, {a,b} is by some shells interpreted as "a" "b", so -
+although not necessary according to POSIX - the symbol { will need to be
+escaped if you have such a shell.
 Any quoting which the author is aware of the currently existing popular
 shell versions (bash, dash, zsh, ksh, busybox, bosh, Bourne shell) is
 taken care of, and if some quoting is missing, this will likely be fixed
 in a future release of "quoter".
 This assertion holds with and without the options -s and -l, but with
-the option -s, the quoting is less aggressive while with -l it is more
-aggressive. This means that with the option -s, the generated string is
-usually more shorter (though usually not more readable) while with -l
-the generated string is usually longer due to unnecessary quoting.
+the option -s, it is attempted to reduce the quoting while with -l a lot
+of (usually redundant) quoting is used.
+This means that with the option -s, the generated output is usually shorter
+(though usually not more readable by a human being) while with -l the
+generated string is usually longer (and less readable) due to unnecessary
+quoting.
 The default -S (--unshort) is a reasonable compromise which is readable
-and safe (unless somebody is extremely paranoid and wants to be safe for
-any future nonstandard shell extensions).
+and safe. Use -s only if you have a reason to require a short string, and
+use -l only if you are extremely paranoid and want to future-safe even for any
+thinkable future nonstandard shell extension not existing yet, e.g. when
+in some shell % should have a special meaning on the command line...
 
 Installation: Just compile the single file src/quoter.c (usually it suffices
-to run "make") and copy the result in your $PATH under the name "quoter".
-The code is c89 compatible with the exception of two compiler specials
-which might optimize the code.
+to run "make" to compile it into bin/quoter) and copy the result in your
+$PATH under the name "quoter". The code is c89 compatible with the exception
+of two compiler specials which might optimize the code:
 If compilation fails, try to use the compiler options
 -DAVOID_BUILTIN_EXPECT and/or -DAVOID_ATTRIBUTE_NORETURN
 to avoid these specials.
+Also copy bin/quoter.sh into your $PATH so that ". quoter.sh" can be used
+for sourcing.
 To obtain zsh completions also copy the content of zsh/ to zsh's $fpath
 (perhaps /usr/share/zsh/site-functions/).
-
+For the standard paths, these copies all hapen by "make install".
 For gentoo, there is an ebuild in the mv overlay (available by layman).

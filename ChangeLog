@@ -1,0 +1,14 @@
+# ChangeLog for quoter:
+
+*quoter-1.1:
+	Martin Väth <martin at mvath.de>:
+	- Provide quoter_pipe.sh
+	- Do not quote - / . even with --long
+	- README much more verbose
+	- Makefile: work if make does not know .PHONY and compile into bin/
+	- internal: use verbose BADTYPE_*
+	- Adapt .gitignore
+
+*quoter-1.0:
+	Martin Väth <martin at mvath.de>:
+	- Initial release written from scratch

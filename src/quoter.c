@@ -5,10 +5,12 @@ Copyright (c) Martin Väth <martin@mvath.de>
 
 Purpose: Quote arguments or standard input for usage in POSIX shell by eval
 
-Installation: Just compile this single file and copy _quoter to zsh's $fpath
+Installation: Just compile this single file and install it into $PATH.
 If the compiler does not understand the specials __builtin_expect or
 __attribute__ ((noreturn)) it should help to pass the respective compiler
 options -DAVOID_BUILTIN_EXPECT or -DAVOID_ATTRIBUTE_NORETURN
+
+The project contains also further which are described in the README
 */
 
 #include <stdio.h>
@@ -53,6 +55,14 @@ void free_and_exit(int i) ATTRIBUTE_NORETURN;
 
 /* This is a simple script: Most variables are just global */
 
+#define BADTYPE_OK 0
+#define BADTYPE_OK_UNLESS_PARANOIC 1
+#define BADTYPE_BAD_AT_START 2 /* simultaneously escapable */
+#define BADTYPE_ESCAPABLE 3
+#define BADTYPE_DELIMITER 4
+#define BADTYPE_BAD 5
+#define BADTYPE_END_OF_STRING -1
+
 static TINY *badtype = NULL;
 static char *buffer = NULL;
 static FILE *outputfh;
@@ -76,7 +86,7 @@ static char *a_para = "a";
 static char *empty = "";
 
 void version_and_exit() {
-	puts("quoter v1.0");
+	puts("quoter v1.1");
 	free_and_exit(EXIT_SUCCESS);
 }
 
@@ -93,7 +103,7 @@ void help_and_exit() {
 "-l or --long             output paranoically long/compatible\n"
 "-c or --cut              omit trailing newline in output\n"
 "-V or --version          print version\n"
-"-h or --help             show this help text\n");
+"-h or --help             show this help text");
 	free_and_exit(EXIT_SUCCESS);
 }
 
@@ -177,41 +187,47 @@ void quoter_eval(char *source) {
 	char *start;
 	for(start = source; ; ) {
 		char *escape = NULL;
-		BOOL mustframe = 0;
+		BOOL needframe = 0;  /* does our part need '...' framing? */
 		char *curr;
 		for(curr = start; ; ++curr) {
 			TINY bad = badtype[(unsigned char)(*curr)];
-			if(likely(bad == 0)) {  /* most frequent case first */
+			if(likely(bad == BADTYPE_OK)) {  /* most frequent case first */
 				continue;
 			}
-			if(opt_short < 0) {
-				if(likely((bad >= 0) && (bad != 4))) {
-					mustframe = 1;
+			if(unlikely(opt_short < 0)) {
+				if(likely((bad >= 0)  /* faster than (bad != BADTYPE_END_OF_STRING) */
+					&& (bad != BADTYPE_DELIMITER))) {
+					needframe = 1;
 					continue;
 				}
 			} else {
-				if(likely(bad == 1) ||
-					(likely(curr != source) && (bad == 2))) {
+				if(likely(bad == BADTYPE_OK_UNLESS_PARANOIC) ||
+					(likely(curr != source) &&
+						(bad == BADTYPE_BAD_AT_START))) {
 					continue;
 				}
-				if(likely(bad == 2) || likely(bad == 3)) {
+				if(likely(bad == BADTYPE_ESCAPABLE) ||
+					likely(bad == BADTYPE_BAD_AT_START)) {
 					if(likely(opt_short == 0) || likely(escape != NULL)) {
-						mustframe = 1;
+						needframe = 1;
 					} else {
 						escape = curr;
 					}
 					continue;
 				}
-				if(likely(bad == 5)) {
-					mustframe = 1;
+				if(likely(bad == BADTYPE_BAD)) {
+					needframe = 1;
 					continue;
 				}
 			}
-			/* end or single quote: output previous part */
+			/*
+			BADTYPE_END_OF_STRING or BADTYPE_DELIMITER:
+			output previous part:
+			*/
 			if(unlikely(start == source)) {
 				delimiter();
 			}
-			if(unlikely(mustframe)) {
+			if(unlikely(needframe)) {
 				safe_fputc('\'');
 				safe_fwrite(start, curr);
 				safe_fputc('\'');
@@ -222,7 +238,7 @@ void quoter_eval(char *source) {
 			} else {
 				safe_fwrite(start, curr);
 			}
-			if(bad < 0) {
+			if(bad < 0) {  /* faster than (bad == BADTYPE_END_OF_STRING) */
 				if(unlikely(curr == source)) {
 					safe_fputs("''");
 				}
@@ -364,21 +380,22 @@ void init_static() {
 		}
 		switch(i) {
 			case '_':
-				badtype[i] = 0;  /* OK */
-				break;
 			case '-':
-			case '+':
 			case '/':
-			case ':':
 			case '.':
-			case '%':
+				badtype[i] = BADTYPE_OK;
+				break;
+			case '+':
+			case ':':
 			case ',':
+			case '%':
 			case '@':
-				badtype[i] = 1;  /* almost OK */
+				badtype[i] = BADTYPE_OK_UNLESS_PARANOIC;
 				break;
 			case '~':
 			case '=':
-				badtype[i] = 2;  /* bad at start; escapable */
+				 /* simultaneously escapable */
+				badtype[i] = BADTYPE_BAD_AT_START;
 				break;
 			case ' ':
 			case '?':
@@ -400,16 +417,16 @@ void init_static() {
 			case ')':
 			case '[':
 			case ']':
-				badtype[i] = 3;  /* escapable */
+				badtype[i] = BADTYPE_ESCAPABLE;
 				break;
 			case '\'':
-				badtype[i] = 4;  /* separator of '...' framing */
+				badtype[i] = BADTYPE_DELIMITER;
 				break;
 			case '\0':
-				badtype[i] = -1;  /* end of string */
+				badtype[i] = BADTYPE_END_OF_STRING;
 				break;
 			default:
-				badtype[i] = 5;  /* requires '...' framing */
+				badtype[i] = BADTYPE_BAD;
 		}
 	}
 }
