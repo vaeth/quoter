@@ -1,5 +1,15 @@
 # ChangeLog for quoter:
 
+*quoter-2.0:
+	Martin Väth <martin at mvath.de>:
+	- Introduce --empty-last (-e) and make the opposite the default:
+	  This makes find --print0 | quote -i and printf '%s\0' | quote -i
+	  work as expected
+	- quoter_pipe: Pass all quoter options
+	- Document how to "emulate" https://github.com/vaeth/push/
+	- Provide small testsuite
+	- Makefile: Try "optimized" compilations, provide "test" target
+
 *quoter-1.1:
 	Martin Väth <martin at mvath.de>:
 	- Provide quoter_pipe.sh

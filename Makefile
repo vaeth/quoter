@@ -8,6 +8,10 @@ all: bin/quoter
 
 bin/quoter: src/quoter.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o bin/quoter src/quoter.c || \
+	$(CC) -DAVOID_ATTRIBUTE_NORETURN \
+		$(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o bin/quoter src/quoter.c || \
+	$(CC) -DAVOID_BUILTIN_EXPECT \
+		$(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o bin/quoter src/quoter.c || \
 	$(CC) -DAVOID_BUILTIN_EXPECT -DAVOID_ATTRIBUTE_NORETURN \
 		$(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o bin/quoter src/quoter.c
 
@@ -29,5 +33,8 @@ distclean: clean FORCE
 	rm -f ./quoter-*.asc ./quoter-*.tar.* ./quoter-*.tar ./quoter-*.zip
 
 maintainer-clean: distclean FORCE
+
+test: bin/quoter
+	sh ./testsuite
 
 FORCE:

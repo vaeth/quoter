@@ -5,6 +5,7 @@ _arguments -s -S -A '-*' : \
 {'(--cut)-c','(-c)--cut'}'[omit trailing newline in output]' \
 {'(--stdin)-i','(-i)--stdin'}'[append stdin, split at \\0]' \
 {'(--newline)-n','(-n)--newline'}'[output newline instead of space]' \
+{'(--empty-last)-e','(-e)--empty-last'}'[interpret trailing \\0 as trailing empty string]' \
 '(--long -l --unshort -S '{'--short)-s','-s)--short'}'[short output]' \
 '(--long -l --short -s '{'--unshort)-S','-S)--unshort'}'[normal output (default)]' \
 '(--short -s --unshort -S '{'--long)-l','-l)--long'}'[long output]' \

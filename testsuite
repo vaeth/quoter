@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+export PATH
+PATH=./bin${PATH:+:}${PATH-}
+. quoter_pipe.sh
+
+next() {
+	count=$(( $count + 1 ))
+}
+
+result() {
+	if [ $? -eq 0 ]
+	then	echo "$1"
+	else	echo "Test '$1' failed" >&2
+		echo "result: $quoter_pipe" >&2
+		exit 1
+	fi
+}
+
+testfunc() {
+	echo $1
+	return $2
+}
+
+quoter_pipe testfunc A 7
+[ $? -eq 1 ]
+result 'Exit 1a'
+[ "$quoter_pipe$quoter_pipestatus" = "'A
+'7" ]
+result 'Exit 1b'
+
+quoter_pipe -e testfunc B 6
+[ $? -eq 1 ]
+result 'Exit 2a'
+[ "$quoter_pipe$quoter_pipestatus" = "'B
+'6" ]
+result 'Exit 2b'
+
+quoter_pipe -n testfunc C 5
+[ $? -eq 1 ]
+result 'Exit 3a'
+[ "$quoter_pipe$quoter_pipestatus" = "'C
+'5" ]
+result 'Exit 3b'
+
+quoter_pipe -ne testfunc D 4
+[ $? -eq 1 ]
+result 'Exit 4a'
+[ "$quoter_pipe$quoter_pipestatus" = "'D
+'4" ]
+result 'Exit 4b'
+
+q() {
+	quoter_pipe "$1" printf "$2" && [ x"$quoter_pipe" = x"$3" ]
+	result "Test $4"
+}
+
+q -S '' "" "''"
+q -e '' "" "-e ''"
+q -n '' "" "-n ''"
+q -ne '' "" "-ne ''"
+
+q -S "'" \\\' "'"
+q -e "'" \\\' "-e '"
+q -n "'" \\\' "-n '"
+q -ne "'" \\\' "-ne '"
+
+q -S '\0' "''" "0"
+q -e '\0' "'' ''" "-e 0"
+q -n '\0' "''" "-n 0"
+q -ne '\0' "'' "'\
+'"''" "-ne 0"
+
+q -S 'a b\0' "'a b'" "a b0"
+q -e 'a b\0' "'a b' ''" "-e a b0"
+q -n 'a b\0' "'a b'" "-n a b0"
+q -ne 'a b\0' "'a b' "'\
+'"''" "-ne a b0"
+
+q -S 'a b\0 ' "'a b' ' '" "a b0s"
+q -e 'a b\0 ' "'a b' ' '" "-e a b0s"
+q -n 'a b\0 ' "'a b' "'\
+'"' '" "-n a b0s"
+q -ne 'a b\0 ' "'a b' "'\
+'"' '" "-ne a b0s"
+
+q -S 'a b\0 \\\n' "'a b' ' "'\
+'"'" "a b0n"
+q -e 'a b\0 \\\n' "'a b' ' "'\
+'"'" "-e a b0n"
+q -n 'a b\0 \\\n' "'a b' "'\
+'"'"' \
+'"'" "-n a b0n"
+q -ne 'a b\0 \\\n' "'a b' "'\
+'"'"' \
+'"'" "-ne a b0n"
+
+q -S '~a' "'~a'" "~a"
+q -S 'a~' "a~" "a~"
+q -l '~a' "'~a'" "-l ~a"
+q -l 'a~' "'a~'" "-l a~"
+
+echo 'All tests succeeded'

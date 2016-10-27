@@ -63,6 +63,9 @@ void free_and_exit(int i) ATTRIBUTE_NORETURN;
 #define BADTYPE_BAD 5
 #define BADTYPE_END_OF_STRING -1
 
+#define INITIAL_BUFFER 0x1000
+#define INCREASE_BUFFER 0x1000
+
 static TINY *badtype = NULL;
 static char *buffer = NULL;
 static FILE *outputfh;
@@ -78,6 +81,7 @@ static TINY opt_short = 0;
 static BOOL opt_stdin = 0;
 static BOOL opt_newline = 0;
 static BOOL opt_cut = 0;
+static BOOL opt_emptylast = 0;
 
 /* Save space by storing strings only once */
 
@@ -86,7 +90,7 @@ static char *a_para = "a";
 static char *empty = "";
 
 void version_and_exit() {
-	puts("quoter v1.1");
+	puts("quoter v2.0");
 	free_and_exit(EXIT_SUCCESS);
 }
 
@@ -101,6 +105,7 @@ void help_and_exit() {
 "-s or --short            output the shortest string as possible\n"
 "-S or --unshort          output readable and compatible length (default)\n"
 "-l or --long             output paranoically long/compatible\n"
+"-e or --empty-last       interpret trailing \0 as trailing empty string\n"
 "-c or --cut              omit trailing newline in output\n"
 "-V or --version          print version\n"
 "-h or --help             show this help text");
@@ -135,51 +140,52 @@ int main(int argc, char **argv) {
 }
 
 void stdin_eval() {
-	size_t currsize = 0x1000;
+	size_t currsize = INITIAL_BUFFER;
 	buffer = safe_malloc(currsize);
 	size_t read_offset = 0;
-	BOOL force_empty = 0;
+	BOOL buffer_boundary = 0;
 	for(;;) {
 		size_t len = read_offset + fread(buffer + read_offset, 1, currsize - read_offset, stdin);
 		if(unlikely(len < currsize)) {
 			currsize = len;
 			break;
 		}
-		force_empty = 0;
+		buffer_boundary = 0;
 		size_t curr = 0;
 		size_t zero = read_offset + strnlen(buffer + read_offset, currsize - read_offset);
 		while(likely(zero != currsize)) {
 			quoter_eval(buffer + curr);
-			curr = zero + 1;
-			if(unlikely(curr == currsize)) {  /* buffer ends with \0 */
-				force_empty = 1;
+			if(unlikely((curr = zero + 1) == currsize)) {  /* buffer ends with \0 */
+				buffer_boundary = 1;
 				break;
 			}
 			zero = curr + strnlen(buffer + curr, currsize - curr);
 		}
-		if(unlikely(force_empty)) {
+		if(unlikely(buffer_boundary)) {
 			read_offset = 0;
 		} else if(unlikely(curr > 0)) {  /* at least one \0 found */
 			read_offset = currsize - curr;
 			memmove(buffer, buffer + curr, read_offset);
 		} else {  /* buffer was not large enough */
 			read_offset = currsize;
-			currsize += 0x1000;
+			currsize += INCREASE_BUFFER;
 			buffer = safe_realloc(buffer, currsize);
 		}
 	}
 	if(unlikely(currsize == 0)) {
-		if(unlikely(force_empty)) {
+		if(unlikely(buffer_boundary) && unlikely(opt_emptylast)) {
 			quoter_eval(empty);
 		}
 		return;
 	}
-	buffer[currsize] = 0;
+	if(unlikely(buffer[currsize - 1] != '\0') || unlikely(opt_emptylast)) {
+		buffer[currsize++] = '\0';
+	}
 	quoter_eval(buffer);
-	size_t curr = read_offset + strlen(buffer + read_offset) + 1;
-	while(likely(curr != currsize + 1)) {
+	size_t curr = read_offset + strlen(buffer + read_offset);
+	while(likely(++curr != currsize)) {
 		quoter_eval(buffer + curr);
-		curr += strlen(buffer + curr) + 1;
+		curr += strlen(buffer + curr);
 	}
 }
 
@@ -309,7 +315,8 @@ void parse_opt(int argc, char **argv) {
 				LONGOPT("unshort", 7, opt_short = 1)
 				LONGOPT("long", 4, opt_short = -1)
 				LONGOPT("stdin", 5, opt_stdin = 1)
-				LONGOPT("newline", 5, opt_newline = 1)
+				LONGOPT("empty-last", 10, opt_emptylast = 1)
+				LONGOPT("newline", 7, opt_newline = 1)
 				LONGOPT("cut", 3, opt_cut = 1)
 				LONGOPT("version", 7, version_and_exit())
 				LONGOPT("help", 4, help_and_exit())
@@ -329,6 +336,9 @@ void parse_opt(int argc, char **argv) {
 						break;
 					case 'i':
 						opt_stdin = 1;
+						break;
+					case 'e':
+						opt_emptylast = 1;
 						break;
 					case 'n':
 						opt_newline = 1;
