@@ -3,10 +3,6 @@ export PATH
 PATH=./bin${PATH:+:}${PATH-}
 . quoter_pipe.sh
 
-next() {
-	count=$(( $count + 1 ))
-}
-
 result() {
 	if [ $? -eq 0 ]
 	then	echo "$1"
@@ -22,36 +18,38 @@ testfunc() {
 }
 
 quoter_pipe testfunc A 7
-[ $? -eq 1 ]
-result 'Exit 1a'
+[ $? -eq 1 ] || 'quoter_pipe ret 1a'
 [ "$quoter_pipe$quoter_pipestatus" = "'A
 '7" ]
-result 'Exit 1b'
+result 'quoter_pipe ret 1'
 
 quoter_pipe -e testfunc B 6
-[ $? -eq 1 ]
-result 'Exit 2a'
+[ $? -eq 1 ] || result 'quoter_pipe ret 2a'
 [ "$quoter_pipe$quoter_pipestatus" = "'B
 '6" ]
-result 'Exit 2b'
+result 'quoter_pipe ret 2'
 
 quoter_pipe -n testfunc C 5
-[ $? -eq 1 ]
-result 'Exit 3a'
+[ $? -eq 1 ] || result 'quoter_pipe ret 3a'
 [ "$quoter_pipe$quoter_pipestatus" = "'C
 '5" ]
-result 'Exit 3b'
+result 'quoter_pipe ret 3'
 
 quoter_pipe -ne testfunc D 4
-[ $? -eq 1 ]
-result 'Exit 4a'
+[ $? -eq 1 ] || result 'quoter_pipe ret 4a'
 [ "$quoter_pipe$quoter_pipestatus" = "'D
 '4" ]
-result 'Exit 4b'
+result 'quoter_pipe ret 4'
 
 q() {
-	quoter_pipe "$1" printf "$2" && [ x"$quoter_pipe" = x"$3" ]
-	result "Test $4"
+	quoter_pipe "$1" -- printf "$2" || result "quoter_pipe $4"a
+	outputC=`printf "$2" | quoter -i "$1"; ret=$?; echo x; exit $ret` || \
+		result "quoter_pipe $4"b
+	outputC=${outputC%x}
+	[ x"$quoter_pipe
+" = x"$outputC" ] || result "quoter_pipe $4"c
+	[ x"$quoter_pipe" = x"$3" ]
+	result "quoter_pipe $4"
 }
 
 q -S '' "" "''"
@@ -98,5 +96,37 @@ q -S '~a' "'~a'" "~a"
 q -S 'a~' "a~" "a~"
 q -l '~a' "'~a'" "-l ~a"
 q -l 'a~' "'a~'" "-l a~"
+
+Q() {
+	arg=$2
+	name='quoter '$4
+	expected=$3
+	quoter_pipe=`quoter -c "$1" -- "$arg"; res=$?; printf x; exit $res` \
+		|| result "$name"a
+	outputC=`quoter "$1" -- "$arg"; res=$?; printf x; exit $res` \
+		|| result "$name"b
+	quoter_pipe=${quoter_pipe%x}
+	outputC=${outputC%x}
+	[ x"$quoter_pipe
+" = x"$outputC" ] || result "$name"c
+	eval "set -- $quoter_pipe"
+	[ $# -eq 1 ] && [ x"$1" = x"$arg" ] ||result "$name"d
+	[ x"$quoter_pipe" = x"$expected" ]
+	result "$name"
+}
+
+Q -s "a b'
+" "a\\ b\\''
+'" "-s space"
+Q -S "a b'
+" "'a b'\\''
+'" "-S space"
+Q -l "a b'
+" "'a b'\\''
+'" "-l space"
+
+Q -s "a~'@'?" "a~\\'@\\'\\?" "-s specials"
+Q -S "a~'@'?" "a~\\'@\\''?'" "-S specials"
+Q -l "a~'@'?" "'a~'\\''@'\\''?'" "-l specials"
 
 echo 'All tests succeeded'

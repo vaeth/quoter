@@ -1,5 +1,9 @@
 # ChangeLog for quoter:
 
+*quoter-2.0_p1:
+	Martin Väth <martin at mvath.de>:
+	- Extend testsuite and make it more compatible
+
 *quoter-2.0:
 	Martin Väth <martin at mvath.de>:
 	- Introduce --empty-last (-e) and make the opposite the default:
