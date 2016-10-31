@@ -1,5 +1,5 @@
-#!/bin/sh  This line is only for editors: This file must be sourced
-# This file is part of quoter v2.0 and distributed under the MIT license
+#!/usr/bin/env cat
+# This file is part of quoter v3.0 and distributed under the MIT license
 #
 # Usage: quoter_pipe [quoter-options] [--] command [args]
 #

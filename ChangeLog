@@ -1,5 +1,10 @@
 # ChangeLog for quoter:
 
+*quoter-3.0:
+	Martin Väth <martin at mvath.de>:
+	- Make quoter_pipe.sh a program to be used with eval
+	- Speed up initialization
+
 *quoter-2.0_p2:
 	Martin Väth <martin at mvath.de>:
 	- Extend testsuite by block boundary tests

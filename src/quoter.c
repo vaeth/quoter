@@ -43,6 +43,7 @@ void quoter_eval(char *source);
 void delimiter();
 void parse_opt(int argc, char **argv);
 void init_static();
+void init_badtype(int from, int to, TINY bt);
 void safe_fputc(int c);
 void safe_fputs(const char *s);
 void safe_fwrite(const char *s, const char *e);
@@ -90,7 +91,7 @@ static char *a_para = "a";
 static char *empty = "";
 
 void version_and_exit() {
-	puts("quoter v2.0");
+	puts("quoter v3.0");
 	free_and_exit(EXIT_SUCCESS);
 }
 
@@ -380,64 +381,49 @@ void parse_opt(int argc, char **argv) {
 
 void init_static() {
 	badtype = safe_malloc(256 * sizeof(TINY));
+	init_badtype(0x01, 0xFF, BADTYPE_BAD);
+	init_badtype('A', 'Z', BADTYPE_OK);
+	init_badtype('a', 'z', BADTYPE_OK);
+	init_badtype('0', '9', BADTYPE_OK);
+	badtype['_'] = BADTYPE_OK;
+	badtype['-'] = BADTYPE_OK;
+	badtype['/'] = BADTYPE_OK;
+	badtype['.'] = BADTYPE_OK;
+	badtype['+'] = BADTYPE_OK_UNLESS_PARANOIC;
+	badtype[':'] = BADTYPE_OK_UNLESS_PARANOIC;
+	badtype[','] = BADTYPE_OK_UNLESS_PARANOIC;
+	badtype['%'] = BADTYPE_OK_UNLESS_PARANOIC;
+	badtype['@'] = BADTYPE_OK_UNLESS_PARANOIC;
+	badtype['~'] = BADTYPE_BAD_AT_START;
+	badtype['='] = BADTYPE_BAD_AT_START;
+	badtype[' '] = BADTYPE_ESCAPABLE;
+	badtype['?'] = BADTYPE_ESCAPABLE;
+	badtype['*'] = BADTYPE_ESCAPABLE;
+	badtype['"'] = BADTYPE_ESCAPABLE;
+	badtype['`'] = BADTYPE_ESCAPABLE;
+	badtype['#'] = BADTYPE_ESCAPABLE;
+	badtype[';'] = BADTYPE_ESCAPABLE;
+	badtype['<'] = BADTYPE_ESCAPABLE;
+	badtype['>'] = BADTYPE_ESCAPABLE;
+	badtype['|'] = BADTYPE_ESCAPABLE;
+	badtype['^'] = BADTYPE_ESCAPABLE;
+	badtype['\\'] = BADTYPE_ESCAPABLE;
+	badtype['&'] = BADTYPE_ESCAPABLE;
+	badtype['$'] = BADTYPE_ESCAPABLE;
+	badtype['{'] = BADTYPE_ESCAPABLE;
+	badtype['}'] = BADTYPE_ESCAPABLE;
+	badtype['('] = BADTYPE_ESCAPABLE;
+	badtype[')'] = BADTYPE_ESCAPABLE;
+	badtype['['] = BADTYPE_ESCAPABLE;
+	badtype[']'] = BADTYPE_ESCAPABLE;
+	badtype['\''] = BADTYPE_DELIMITER;
+	badtype['\0'] = BADTYPE_END_OF_STRING;
+}
+
+void init_badtype(int from, int to, TINY bt) {
 	int i;
-	for(i = 0; i <= 255; ++i) {
-		if(((i >= 'A') && (i <= 'Z')) ||
-			((i >= 'a') && (i <= 'z')) ||
-			((i >= '0') && (i <= '9'))) {
-			badtype[i] = 0;
-			continue;
-		}
-		switch(i) {
-			case '_':
-			case '-':
-			case '/':
-			case '.':
-				badtype[i] = BADTYPE_OK;
-				break;
-			case '+':
-			case ':':
-			case ',':
-			case '%':
-			case '@':
-				badtype[i] = BADTYPE_OK_UNLESS_PARANOIC;
-				break;
-			case '~':
-			case '=':
-				 /* simultaneously escapable */
-				badtype[i] = BADTYPE_BAD_AT_START;
-				break;
-			case ' ':
-			case '?':
-			case '*':
-			case '"':
-			case '`':
-			case '#':
-			case ';':
-			case '<':
-			case '>':
-			case '|':
-			case '^':
-			case '\\':
-			case '&':
-			case '$':
-			case '{':
-			case '}':
-			case '(':
-			case ')':
-			case '[':
-			case ']':
-				badtype[i] = BADTYPE_ESCAPABLE;
-				break;
-			case '\'':
-				badtype[i] = BADTYPE_DELIMITER;
-				break;
-			case '\0':
-				badtype[i] = BADTYPE_END_OF_STRING;
-				break;
-			default:
-				badtype[i] = BADTYPE_BAD;
-		}
+	for(i = from; i <= to; ++i) {
+		badtype[i] = bt;
 	}
 }
 

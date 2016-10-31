@@ -17,7 +17,7 @@ bin/quoter: src/quoter.c
 
 install: bin/quoter
 	install -D bin/quoter $(DESTDIR)$(BIN_DIR)/quoter
-	install -Dm 644 bin/quoter_pipe.sh $(DESTDIR)$(BIN_DIR)/quoter_pipe.sh
+	install -D bin/quoter_pipe.sh $(DESTDIR)$(BIN_DIR)/quoter_pipe.sh
 	install -Dm 644 zsh/_quoter $(DESTDIR)/$(ZSH_FPATH)/_quoter
 
 uninstall: FORCE
