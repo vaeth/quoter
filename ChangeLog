@@ -1,5 +1,11 @@
 # ChangeLog for quoter:
 
+*quoter-3.0_p1
+	Martin Väth <martin at mvath.de>:
+	- Makefile: Use install more compatible. Thanks to Lars Isakson for
+	  reporting and Yuta SATOH for the suggestion of a solution, see
+	  https://bugs.gentoo.org/show_bug.cgi?id=598972
+
 *quoter-3.0:
 	Martin Väth <martin at mvath.de>:
 	- Make quoter_pipe.sh a program to be used with eval
