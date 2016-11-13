@@ -1,5 +1,10 @@
 # ChangeLog for quoter:
 
+*quoter-3.0_p2
+	Martin Väth <martin at mvath.de>:
+	- README: How to use POSIX find instead of GNU find
+	- README: Minor improvements of language and description of -s/-l
+
 *quoter-3.0_p1
 	Martin Väth <martin at mvath.de>:
 	- Makefile: Use install more compatible. Thanks to Lars Isakson for
