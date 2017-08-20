@@ -1,5 +1,9 @@
 # ChangeLog for quoter:
 
+*quoter-4.0
+	Martin Väth <martin at mvath.de>:
+	- Install wrapper for quoter_pipe.sh, making direct sourcing obsolete
+
 *quoter-3.0_p2
 	Martin Väth <martin at mvath.de>:
 	- README: How to use POSIX find instead of GNU find

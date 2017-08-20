@@ -91,7 +91,7 @@ static char *a_para = "a";
 static char *empty = "";
 
 void version_and_exit() {
-	puts("quoter v3.0");
+	puts("quoter v4.0");
 	free_and_exit(EXIT_SUCCESS);
 }
 

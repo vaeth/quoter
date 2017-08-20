@@ -109,12 +109,14 @@ then	eval "$SOME_VARIABLE"
 else	echo "quoter_pipe.sh is not installed" >&2
 fi
 
-Alternatively, one can also use
+Remark: An obsoleted method was to use instead
 
 . quoter_pipe.sh
 
-The latter works also with earlier versions of quoter, but it has the
-disadvantage of stopping the script if quoter_pipe.sh is not available.
+The latter works for older versions of quote or if one installs manually,
+but unless an appropriate PATH before sourcing is set, it fails when
+quoter_pipe.sh is replaced by a wrapper script which happens with the provided
+Makefile. Moreover, if quoter_pipe.sh is not available it stops the script.
 
 After the quoter_pipe function is defined, it can be used as follows. The call
 
