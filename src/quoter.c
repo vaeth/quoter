@@ -91,7 +91,7 @@ static char *a_para = "a";
 static char *empty = "";
 
 void version_and_exit() {
-	puts("quoter v4.0");
+	puts("quoter v4.1");
 	free_and_exit(EXIT_SUCCESS);
 }
 
@@ -106,7 +106,7 @@ void help_and_exit() {
 "-s or --short            output the shortest string as possible\n"
 "-S or --unshort          output readable and compatible length (default)\n"
 "-l or --long             output paranoically long/compatible\n"
-"-e or --empty-last       interpret trailing \0 as trailing empty string\n"
+"-e or --empty-last       interpret trailing \\0 as trailing empty string\n"
 "-c or --cut              omit trailing newline in output\n"
 "-V or --version          print version\n"
 "-h or --help             show this help text");
