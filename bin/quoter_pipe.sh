@@ -1,5 +1,6 @@
 #!/usr/bin/env cat
-# This file is part of quoter v3.0 and distributed under the MIT license
+# This file is part of the quoter project and distributed under the MIT license
+# SPDX-License-Identifier: MIT
 #
 # Usage: quoter_pipe [quoter-options] [--] command [args]
 #

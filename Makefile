@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 PREFIX=/usr
 EPREFIX=
 BINDIR=$(PREFIX)/bin

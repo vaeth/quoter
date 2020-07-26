@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT
 export PATH
 PATH=./bin${PATH:+:}${PATH-}
 . quoter_pipe.sh

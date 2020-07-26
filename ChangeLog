@@ -1,5 +1,13 @@
 # ChangeLog for quoter:
 
+*quoter-4.2
+	Martin Väth <martin at mvath.de>:
+	- Add SPDX-License-Identifier
+
+*quoter-4.1
+	Martin Väth <martin at mvath.de>:
+	- Fix --help output
+
 *quoter-4.0
 	Martin Väth <martin at mvath.de>:
 	- Install wrapper for quoter_pipe.sh, making direct sourcing obsolete

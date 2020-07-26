@@ -1,5 +1,6 @@
 /* vim:set noet cinoptions= sw=4 ts=4:
 This file is part of the quoter project and distributed under the MIT license.
+SPDX-License-Identifier: MIT
 
 Copyright (c) Martin Väth <martin@mvath.de>
 

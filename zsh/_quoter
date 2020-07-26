@@ -1,4 +1,5 @@
 #compdef quoter
+# SPDX-License-Identifier: MIT
 _arguments -s -S -A '-*' : \
 '(* -)'{'--help','-h'}'[print help]' \
 '(* -)'{'--version','-V'}'[print version]' \

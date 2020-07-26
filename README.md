@@ -5,6 +5,7 @@ quote arguments or standard input for usage in POSIX shell by eval
 Author: Martin Väth (martin at mvath.de)
 
 This project is under the MIT license.
+SPDX-License-Identifier: MIT
 
 This project serves two purposes:
 
@@ -112,9 +113,10 @@ command of a pipe, and neither -o pipefail nor the PIPESTATUS array are POSIX.
 
 
 For this reason, this project also provides a shell function `quoter_pipe`
-To define this shell function with __quoter-3.0__, one can `eval` the output of
-the program `quoter_pipe.sh`. For instance, to check whether quoter_pipe.sh
-is installed and to define it if it is, one can use something like
+To define this shell function with __quoter-3.0__ or newer,
+one can `eval` the output of the program `quoter_pipe.sh`.
+For instance, to check whether quoter_pipe.sh is installed and to define it
+if it is, one can use something like
 ```
 if SOME_VARIABLE=`quoter_pipe.sh 2>/dev/null`
 then	eval "$SOME_VARIABLE"
